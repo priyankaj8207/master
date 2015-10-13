@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# chkconfig: 2345 95 20
+# description: This is the startup script for tomcat
+# processname: tomcat
+ 
+ECHO=/bin/echo
+TEST=/usr/bin/test
+TOMCAT_USER=vagrant
+TOMCAT_HOME=/opt/tomcat7
+TOMCAT_START_SCRIPT=$TOMCAT_HOME/bin/startup.sh
+TOMCAT_STOP_SCRIPT=$TOMCAT_HOME/bin/shutdown.sh
+
+export JAVA_HOME=/opt/jdk1.7/
+export JRE_HOME=/opt/jdk1.7/jre
+export PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+
+$TEST -x $TOMCAT_START_SCRIPT || exit 0
+$TEST -x $TOMCAT_STOP_SCRIPT || exit 0
+
+start_script() {
+    $ECHO -n "Starting tomcat please wait..."
+	su - $TOMCAT_USER -c "$TOMCAT_START_SCRIPT &"
+	$ECHO "."
+}
+
+stop_script() {
+	$ECHO -n "Stopping tomcat please wait..."
+	su - $TOMCAT_USER -c "$TOMCAT_STOP_SCRIPT 60 -force &"
+	while [ "$(ps -fu $TOMCAT_USER | grep java | grep tomcat | wc -l)" -gt "0" ]; do
+		sleep 5; $ECHO -n "."
+	done
+	$ECHO "."
+}
+
+case "$1" in 
+	start)
+		start_script
+		;;
+	stop)
+		stop_script
+		;;
+	restart)
+		stop
+		sleep 30
+		start
+		;;
+	*)
+		$ECHO "Usage: tomcat {start|stop|restart}"
+		exit 1
+esac
+exit 0
